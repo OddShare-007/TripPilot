@@ -15,6 +15,7 @@ interface TripContextValue {
   addTrip: (flight: Flight, passenger: Passenger, source?: Trip['source']) => Promise<Trip>
   findByPnr: (pnr: string) => Promise<Trip | undefined>
   refreshTrips: () => Promise<void>
+  error: string | null
 }
 
 const TripContext = createContext<TripContextValue | null>(null)
@@ -22,13 +23,20 @@ const TripContext = createContext<TripContextValue | null>(null)
 export function TripProvider({ children }: { children: ReactNode }) {
   const { user, mode } = useAuth()
   const [trips, setTrips] = useState<Trip[]>([])
+  const [error, setError] = useState<string | null>(null)
 
   const refreshTrips = useCallback(async () => {
     if (user) {
-      const nextTrips = await tripService.getTripsForUser(user.id, mode)
-      setTrips(nextTrips)
+      try {
+        const nextTrips = await tripService.getTripsForUser(user.id, mode)
+        setTrips(nextTrips)
+        setError(null)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Unable to load trips right now.')
+      }
     } else {
       setTrips([])
+      setError(null)
     }
   }, [user, mode])
 
@@ -39,9 +47,15 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const addTrip = useCallback(
     async (flight: Flight, passenger: Passenger, source: Trip['source'] = 'manual') => {
       if (!user) throw new Error('Must be logged in to add trips')
-      const trip = await tripService.addTrip(user.id, flight, passenger, mode, source)
-      await refreshTrips()
-      return trip
+      try {
+        const trip = await tripService.addTrip(user.id, flight, passenger, mode, source)
+        await refreshTrips()
+        return trip
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Unable to save the trip right now.'
+        setError(message)
+        throw new Error(message)
+      }
     },
     [user, mode, refreshTrips],
   )
@@ -55,7 +69,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
   )
 
   return (
-    <TripContext.Provider value={{ trips, addTrip, findByPnr, refreshTrips }}>
+    <TripContext.Provider value={{ trips, addTrip, findByPnr, refreshTrips, error }}>
       {children}
     </TripContext.Provider>
   )

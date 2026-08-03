@@ -151,12 +151,28 @@ User (Web/Mobile) → Frontend → AI Assistant Layer → Backend/Server →
 
 ## Database Design
 
-**Suggested tables:** Users, Passengers, Reservations, Flights, Flight Status,
-Notifications, Travel History.
+**Current implementation:** TripPilot now uses Supabase Postgres for trip and passenger
+storage while keeping authentication local/mock for the time being.
 
-**Relationships (simple):** One User → many Passengers, many Reservations. Each
-Reservation → linked to one Flight. Each Flight → has a live Flight Status. Completed
-Reservations move into Travel History. Important updates generate Notifications.
+**Tables in use:**
+- `public.passengers` with columns: `id`, `passenger_code`, `user_id`, `name`,
+  `age`, `gender`, `phone`, `email`, `passport`, `government_id`,
+  `emergency_contact`, `frequent_flyer_number`, `travel_preferences`, `mode`,
+  `created_at`
+- `public.trips` with columns: `id`, `user_id`, `passenger_id`, `pnr`,
+  `flight_number`, `airline`, `aircraft_type`, `source_airport`,
+  `destination_airport`, `departure_terminal`, `arrival_terminal`,
+  `departure_gate`, `arrival_gate`, `departure_time`, `arrival_time`, `duration`,
+  `layover_details`, `stops`, `fare`, `seat`, `cabin_class`, `meal`,
+  `baggage_allowance`, `refund_policy`, `cancellation_policy`, `flight_status`,
+  `booking_website`, `source`, `mode`, `created_at`
+
+**Relationships:** One user can have many passengers and many trips. Each trip points to
+one passenger record. Demo and real data are isolated via the `mode` column rather than
+separate local prefixes.
+
+**Authentication status:** Supabase Auth is intentionally not connected in this phase.
+User sign-up/sign-in remains local/mock and will be migrated separately later.
 
 ---
 

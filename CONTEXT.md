@@ -37,10 +37,11 @@ It is **NOT** a booking platform. It helps users track and manage flights they'v
 - PNR lookup clearly explains that a provider API is required
 
 ### Shared Data Layer
-- `TripContext` + `tripService` provide a single source of truth backed by localStorage
-- `AuthContext` + `authService` for user accounts and sessions
-- All pages (Dashboard, Add Trip Data) read from / write to the same store
-- Services are structured as interface objects so real API calls can replace them later
+- `TripContext` + `tripService` provide a single source of truth backed by Supabase Postgres tables for passengers and trips
+- `AuthContext` + `authService` remain local/mock for user accounts and sessions for now
+- All pages (Dashboard, Add Trip Data, Analytics) read from / write to the same Supabase-backed store
+- Services are structured as interface objects so the backend can evolve later without changing the UI
+- Supabase tables: `passengers` and `trips`, with `mode` used for demo/real isolation
 
 ### Dashboard (fully wired)
 - Real stat cards: upcoming count, total spent, routes flown, next departure

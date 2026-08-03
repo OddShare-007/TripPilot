@@ -61,7 +61,7 @@ const initialPassenger: Passenger = {
 
 export default function AddTripPage() {
   const navigate = useNavigate()
-  const { addTrip } = useTrips()
+  const { addTrip, error: tripError } = useTrips()
 
   const [activeTab, setActiveTab] = useState<Tab>('manual')
 
@@ -114,8 +114,8 @@ export default function AddTripPage() {
       setFlight({ ...initialFlight })
       setPassenger({ ...initialPassenger })
       navigate('/dashboard')
-    } catch {
-      setSaveError('Failed to save trip. Please try again.')
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Failed to save trip. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -483,9 +483,9 @@ export default function AddTripPage() {
           </div>
 
           {/* Save error */}
-          {saveError && (
+          {(saveError || tripError) && (
             <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/50 dark:text-red-300">
-              {saveError}
+              {saveError || tripError}
             </div>
           )}
 
