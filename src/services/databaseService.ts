@@ -1,6 +1,6 @@
 import type { User, Passenger, Trip, UserPreferences, Flight, CabinClass, FlightStatus } from '../types'
 import { getAll, getById, put, clearStore, STORE_NAMES } from '../lib/idb'
-import { readStorage, writeStorage, removeStorage, STORAGE_KEYS } from '../lib/storage'
+import { readStorage, writeStorage, removeStorage, STORAGE_KEYS, readAuthSession, writeAuthSession, clearAuthSession } from '../lib/storage'
 import { getSupabaseClient, getSupabaseErrorMessage } from '../lib/supabase'
 
 export type Mode = 'demo' | 'real'
@@ -335,7 +335,7 @@ export const databaseService = {
       age,
     }
     await put<StoredUserRecord>(STORE_NAMES.users, user)
-    writeStorage(getModeStorageKey(mode), { userId: user.id })
+    writeAuthSession({ userId: user.id, email: normalized, mode, isLoggedIn: true })
     return { success: true, user }
   },
 
@@ -355,14 +355,20 @@ export const databaseService = {
   },
 
   async getCurrentUser(mode: Mode): Promise<User | null> {
-    const session = readStorage<{ userId: string } | null>(getModeStorageKey(mode), null)
-    if (!session) return null
-    const users = await getUsers(mode)
-    return users.find((user) => user.id === session.userId) ?? null
+    const persistedSession = readAuthSession()
+    const activeMode = (persistedSession?.mode as Mode | undefined) ?? mode
+    if (!persistedSession?.userId) {
+      const legacySession = readStorage<{ userId: string } | null>(getModeStorageKey(mode), null)
+      if (!legacySession?.userId) return null
+      const users = await getUsers(mode)
+      return users.find((user) => user.id === legacySession.userId) ?? null
+    }
+    const users = await getUsers(activeMode)
+    return users.find((user) => user.id === persistedSession.userId) ?? null
   },
 
   async signOut(mode: Mode): Promise<void> {
-    removeStorage(getModeStorageKey(mode))
+    clearAuthSession(mode)
   },
 
   async updateUser(user: StoredUserRecord): Promise<User> {

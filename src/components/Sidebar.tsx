@@ -51,8 +51,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       />
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-full w-64 shrink-0 flex-col overflow-hidden border-r border-surface-border bg-surface shadow-lg shadow-brand-950/5 transition-transform duration-300 ease-in-out dark:border-brand-800 dark:bg-brand-900 lg:static lg:z-auto lg:h-auto lg:w-64 lg:translate-x-0 lg:shadow-none ${
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+        className={`fixed inset-y-0 left-0 z-50 flex h-full w-64 shrink-0 flex-col overflow-hidden border-r border-surface-border bg-surface shadow-lg shadow-brand-950/5 transition-transform duration-300 ease-in-out dark:border-brand-800 dark:bg-brand-900 lg:static lg:z-auto lg:h-auto lg:w-64 lg:shadow-none ${
+          isOpen ? 'translate-x-0 lg:translate-x-0' : '-translate-x-full lg:-translate-x-full'
         }`}
         style={{ top: 'var(--top-offset, 0px)' }}
       >

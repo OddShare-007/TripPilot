@@ -1,5 +1,5 @@
 import type { TravellerType, TravelPriority, User, UserPreferences } from '../types'
-import { readStorage, writeStorage, removeStorage, STORAGE_KEYS } from '../lib/storage'
+import { readStorage, writeStorage, STORAGE_KEYS, readAuthSession, writeAuthSession, clearAuthSession } from '../lib/storage'
 import { databaseService, type Mode } from './databaseService'
 
 export interface AuthResult {
@@ -9,6 +9,10 @@ export interface AuthResult {
 }
 
 function getCurrentMode(): Mode {
+  const persistedSession = readAuthSession()
+  if (persistedSession?.mode) {
+    return persistedSession.mode as Mode
+  }
   return readStorage<Mode>(STORAGE_KEYS.mode, 'demo')
 }
 
@@ -30,8 +34,9 @@ export const authService = {
     }
     const result = await databaseService.signUp(email, password, fullName, age ?? 0, mode)
     if (result.success && result.user) {
-      setCurrentMode(result.user.mode ?? mode)
-      writeStorage(STORAGE_KEYS.session, { userId: result.user.id })
+      const activeMode = result.user.mode ?? mode
+      setCurrentMode(activeMode)
+      writeAuthSession({ userId: result.user.id, email: normalized, mode: activeMode, isLoggedIn: true })
     }
     return result
   },
@@ -39,18 +44,21 @@ export const authService = {
   async signIn(email: string, password: string, mode: Mode = getCurrentMode()): Promise<AuthResult> {
     const result = await databaseService.signIn(email, password, mode)
     if (result.success && result.user) {
-      setCurrentMode(result.user.mode ?? mode)
-      writeStorage(STORAGE_KEYS.session, { userId: result.user.id })
+      const activeMode = result.user.mode ?? mode
+      setCurrentMode(activeMode)
+      writeAuthSession({ userId: result.user.id, email: normalized, mode: activeMode, isLoggedIn: true })
     }
     return result
   },
 
   async signOut(mode: Mode = getCurrentMode()): Promise<void> {
-    removeStorage(`${mode}_session`)
+    clearAuthSession(mode)
   },
 
   async getCurrentUser(mode: Mode = getCurrentMode()): Promise<User | null> {
-    return databaseService.getCurrentUser(mode)
+    const persistedSession = readAuthSession()
+    const activeMode = (persistedSession?.mode as Mode | undefined) ?? mode
+    return databaseService.getCurrentUser(activeMode)
   },
 
   async updatePreferences(userId: string, prefs: Partial<UserPreferences>, mode: Mode = getCurrentMode()): Promise<User | null> {
